@@ -1,19 +1,20 @@
+from __future__ import annotations
 from heapq import heappop, heappush
+import numpy as np
 
 
 class Field:
     """
         Representation of puzzle field
     """
-    def __init__(self, distance_from_start=0, parent=None):
+    def __init__(self, distance_from_start: int = 0, parent: Field = None, state: np.array = None):
         # assert any((distance_from_start, parent))
         self.parent = parent
         if self.parent:
             self.cost = parent.cost + 1
         else:
             self.cost = distance_from_start
-
-        self.state = [0, 1, 2, 4, 5, 6, 7, 8]
+        self.state = state
 
     @property
     def weight(self):

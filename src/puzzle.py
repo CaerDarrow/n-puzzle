@@ -1,6 +1,5 @@
 from heapq import heappop, heappush
 import numpy as np
-from scipy.spatial.distance import cdist
 from spiral_matrix import SpiralMatrixMapping
 
 
@@ -9,28 +8,31 @@ class Field:
         Representation of puzzle field
     """
     def __init__(self,
-                 distance_from_start: int = 0,
                  parent=None,
                  state: np.array = None,
+                 distance_from_start: bool = True,
                  manhattan_score: int = 0,
-                 perms=((0, 0), (0, 0))):
-        # assert any((distance_from_start, parent))
+                 hamming_score: int = 0,
+                 permutations=((0, 0), (0, 0))):
         self.parent = parent
-        if self.parent:
-            self.exact_cost = parent.exact_cost + 1  # g(n)
-        else:
-            self.exact_cost = distance_from_start  # g(n)
+        # g(n)
+        self.exact_cost = 0
+        if distance_from_start and parent:
+            self.exact_cost = parent.exact_cost + 1
+        # h(n)
+        self.manhattan_score = manhattan_score
+        self.hamming_score = hamming_score
+        # state
         assert state is not None, "Попытка создать пустую головоломку"
         self.state = state
-        self.manhattan_score = manhattan_score
-        self.permutations = perms
+        self.permutations = permutations
 
     @property
     def cost(self):  # f(n)
         return self.exact_cost + self.estimated_cost()
 
-    def estimated_cost(self):  # # h(n) - heuristic
-        return self.manhattan_score
+    def estimated_cost(self):  # h(n) - heuristic
+        return self.manhattan_score + self.hamming_score
 
     def __lt__(self, other):
         return self.cost < other.cost
@@ -49,65 +51,90 @@ class Field:
 
 
 class Solver:
-    def __init__(self, first_field: Field):
+    def __init__(
+            self,
+            first_field: Field,
+            greedy_search: bool = False,
+            uniform_cost: bool = False,
+            manhattan: bool = False,
+            hamming: bool = False,
+    ):
         self.closed_set = set()
         self.open_set = []
-        self.first_field = first_field
-        self.target_state = np.ndarray([])  # решение
-        self.field_size = tuple(range(self.first_field.state.shape[0]))
+        self._first_field = first_field
+        self._target_state = np.ndarray([])  # решение
+        self._field_size = tuple(range(self._first_field.state.shape[0]))
+        self._greedy = greedy_search
+        self._uniform_cost = uniform_cost
+        self._manhattan = manhattan
+        self._hamming = hamming
+        if self._uniform_cost and any((self._manhattan, self._hamming)):
+            raise AssertionError("Нельзя использовать эвристики и унифицированную стоимость")
 
     def _set_solution(self):
-        solution = SpiralMatrixMapping(self.first_field.state.shape[0])
+        solution = SpiralMatrixMapping(self._first_field.state.shape[0])
         self.target_state = np.reshape(
             np.roll(
-                np.sort(self.first_field.state, axis=None),
+                np.sort(self._first_field.state, axis=None),
                 -1
             )[solution.matrix_to_spiral],
-            self.first_field.state.shape
+            self._first_field.state.shape
         )
 
-    def manhattan_score(self, state):
+    def _manhattan_score(self, state: np.ndarray) -> int:
         distance = 0
-        for y in self.field_size:
-            for x in self.field_size:
+        for y in self._field_size:
+            for x in self._field_size:
                 if state[y, x] != 0:
                     target_y, target_x = np.argwhere(self.target_state == state[y, x])[0]
                     distance += abs(target_y - y) + abs(target_x - x)
         return distance
 
-    def _is_solvable(self):
+    def _is_solvable(self) -> bool:
         if False:
             return False
         return True
 
-    def _generate_fields(self, field: Field):
+    def _generate_fields(
+            self,
+            field: Field,
+    ):
         y, x = np.argwhere(field.state == 0)[0]
         for x_gain, y_gain in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if x + x_gain in self.field_size and y + y_gain in self.field_size:
+            if x + x_gain in self._field_size and y + y_gain in self._field_size:
                 copied = np.copy(field.state)
                 copied[y, x], copied[y + y_gain, x + x_gain] = copied[y + y_gain, x + x_gain], copied[y, x]
-                if hash(tuple(copied.tostring())) not in self.closed_set:
+                if hash(copied.tostring()) not in self.closed_set:
+                    manhattan_score = 0
+                    hamming_score = 0
+                    distance_from_start = not self._greedy
+                    if not self._uniform_cost:
+                        if self._manhattan:
+                            manhattan_score = self._manhattan_score(copied)
+                        if self._hamming:
+                            hamming_score = 0
                     heappush(
                         self.open_set,
                         Field(
                             parent=field,
                             state=copied,
-                            manhattan_score=self.manhattan_score(copied),
-                            perms=((y, x), (y + y_gain, x + x_gain))
+                            distance_from_start=distance_from_start,
+                            manhattan_score=manhattan_score,
+                            hamming_score=hamming_score,
+                            permutations=((y, x), (y + y_gain, x + x_gain))
                         )
                     )
-                else:
-                    del copied  # lol
 
-    def solve(self):
+    def solve(self) -> Field:
         if self._is_solvable():
             self._set_solution()
-            heappush(self.open_set, self.first_field)
+            heappush(self.open_set, self._first_field)
             while self.open_set:
                 current_field = heappop(self.open_set)
+                # print(current_field.cost)
+                # print(current_field.state)
                 self.closed_set.add(hash(current_field))
                 if np.array_equal(current_field.state, self.target_state):
-                    print("Solved")
                     return current_field  # solved
                 self._generate_fields(field=current_field)  # Fields states generator
         raise Exception("Can't solve")

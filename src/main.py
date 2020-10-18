@@ -15,7 +15,7 @@ def generator(solution):
 def main(puzzle_name):
     puzzle_path = Path(f"../data/puzzles/{puzzle_name}")
     puzzle = parse_n_puzzle(puzzle_path)
-    solver = Solver(first_field=puzzle)
+    solver = Solver(first_field=puzzle, manhattan=True)
     solved_puzzle = solver.solve()
     vis = Visualizer("../data/images/pepega.jpg", puzzle)
     for field in generator(solved_puzzle):
@@ -26,7 +26,7 @@ def main(puzzle_name):
 if __name__ == '__main__':
     # import sys
     # puzzle_name = sys.argv[1]
-    puzzle_name = 'solv_3.txt'
+    puzzle_name = 'solv_4.txt'
     main(puzzle_name)
 
 

@@ -1,7 +1,8 @@
 import cv2
+import sys
 import numpy as np
 
-from src.spiral_matrix import SpiralMatrixMapping
+from spiral_matrix import SpiralMatrixMapping
 
 
 class Visualizer(object):
@@ -37,19 +38,29 @@ class Visualizer(object):
         """
         Run visualization
         """
-        print("Visualization:")
+        def _print_progress():
+            progress = "Progress: {:-{}d} / {:-{}d} - {}%" \
+                .format(i, num_spaces, history_len, num_spaces, int(i / history_len * 100))
+            sys.stdout.write("\r" + progress)
+
+        print("===== Visualization =====")
         print("' ' - one step forward")
         print("'b' - one step backward")
         print("'r' - run")
         print("'s' - stop")
         print("esc - exit")
+        print("=========================")
 
+        history_len = len(self.swap_history)
+        num_spaces = len(str(history_len))
         i = 0
         ms = 0
+        _print_progress()
         while True:
-            image = self.image if i == len(self.swap_history) else self.puzzle_image
+            image = self.image if i == history_len else self.puzzle_image
             key = self.show(image, ms)
-            if key == ord(' ') and i < len(self.swap_history):
+            # sys.stdout.write("\033[F")
+            if key == ord(' ') and i < history_len:
                 self._swap_cells(*self.swap_history[i])
                 i += 1
                 ms = 0
@@ -57,15 +68,17 @@ class Visualizer(object):
                 i -= 1
                 self._swap_cells(*reversed(self.swap_history[i]))
                 ms = 0
-            elif (key == ord('r') or key == -1) and i < len(self.swap_history):
+            elif (key == ord('r') or key == -1) and i < history_len:
                 self._swap_cells(*self.swap_history[i])
                 ms = 250
                 i += 1
             elif key == ord('s'):
                 ms = 0
             elif key == 27:
+                print()
                 cv2.destroyWindow("%d-puzzle" % self.n)
                 break
+            _print_progress()
 
     def show(self, image, ms=0):
         """
@@ -103,7 +116,7 @@ class Visualizer(object):
                (self.cell_w * c, self.cell_w * c + self.cell_w)
 
     @staticmethod
-    def _fake_rgba(image, alpha=50):
+    def _fake_rgba(image, alpha=25):
         return image * (alpha / 255)
 
     def _split_image(self, scale=1):
@@ -169,12 +182,13 @@ class Visualizer(object):
 
 
 if __name__ == '__main__':
-    from src.parser import parse_n_puzzle
+
+    from parser import parse_n_puzzle
     ms = 300
 
-    puzzle = parse_n_puzzle("../data/puzzles/solv_3.txt")
+    puzzle = parse_n_puzzle("data/puzzles/solv_3.txt")
 
-    vis = Visualizer("../data/images/pepega.jpg", puzzle)
+    vis = Visualizer("data/images/pepega.jpg", puzzle)
     vis.add_swap([0, 2], [0, 1])
     vis.add_swap(np.array([0, 1]), np.array([1, 1]))
     vis.add_swap((1, 1), (2, 1))
@@ -183,5 +197,5 @@ if __name__ == '__main__':
     vis.add_swap((1, 0), (0, 0))
     vis.run()
 
-    cv2.imwrite("../data/images/rgba.png", vis.puzzle_image)
+    cv2.imwrite("data/images/rgba.png", vis.puzzle_image)
 

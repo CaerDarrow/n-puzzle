@@ -16,7 +16,6 @@ class Field:
             self.cost = distance_from_start
         assert state is not None, "Попытка создать пустую головоломку"
         self.state = state
-        print(self.state)
 
     @property
     def weight(self):
@@ -49,30 +48,34 @@ class Solver:
             )[solution.matrix_to_spiral],
             self.first_field.state.shape
         )
-        print(self.target_state)
 
     def _is_solvable(self):
         if False:
             return False
         return True
 
-    def generate_fields(self, field: Field):
+    def _generate_fields(self, field: Field):
         y, x = np.argwhere(field.state == 0)[0]
-        print(x, y)
-        yield Field(parent=field, state=field.state)
+        y_max, x_max = field.state.shape
+        for x_gain, y_gain in (1, 0), (-1, 0), (0, 1), (0, -1):
+            if x + x_gain in range(0, x_max) and y + y_gain in range(0, y_max):
+                copied = np.copy(field.state)
+                copied[y, x], copied[y + y_gain, x + x_gain] = copied[y + y_gain, x + x_gain], copied[y, x]
+                if hash(tuple(copied.tostring())) not in self.closed_set:
+                    heappush(self.open_set, Field(parent=field, state=copied))
+                else:
+                    del copied  # lol
 
     def solve(self):
         if self._is_solvable():
             self._set_solution()
             heappush(self.open_set, self.first_field)
-            print(self.target_state)
             while self.open_set:
                 current_field = heappop(self.open_set)
-                if current_field not in self.closed_set:
-                    self.closed_set.add(current_field)
-                    if current_field.state == self.target_state:
-                        return True  # solved
-                    for field in self.generate_fields(field=current_field):  # Fields states generator
-                        heappush(self.open_set, field)
-                    break
+                print(current_field.state)
+                self.closed_set.add(hash(current_field))
+                if np.array_equal(current_field.state, self.target_state):
+                    print("Solved")
+                    return current_field  # solved
+                self._generate_fields(field=current_field)  # Fields states generator
         raise Exception("Can't solve")

@@ -1,19 +1,21 @@
 import cv2
 import sys
 import numpy as np
+from pathlib import Path
 
+from puzzle import Field
 from spiral_matrix import SpiralMatrixMapping
 
 
 class Visualizer(object):
 
-    def __init__(self, image_path, puzzle, scale=1.0):
+    def __init__(self, image_path: str or Path, puzzle: Field, scale=1.0):
         """
         :param image_path: str ot Path - path to image for n-puzzle visualization
-        :param puzzle: ndarray - NxN matrix
+        :param puzzle: Field object
         :param scale: float - image scale
         """
-        self.n = puzzle.shape[0]
+        self.n = puzzle.state.shape[0]
         self.smm = SpiralMatrixMapping(self.n)
         self.swap_history = []
 
@@ -22,7 +24,7 @@ class Visualizer(object):
         self.cell_w = 0
 
         self.cells = self._split_image(scale)
-        self._permute_cells(puzzle)
+        self._permute_cells(puzzle.state)
         self.puzzle_image = self._cells_to_image()
 
     def add_swap(self, xy1, xy2):
@@ -44,8 +46,8 @@ class Visualizer(object):
             sys.stdout.write("\r" + progress)
 
         print("===== Visualization =====")
-        print("' ' - one step forward")
-        print("'b' - one step backward")
+        print("' ' or -> - one step forward")
+        print("'b' or <-  - one step backward")
         print("'r' - run")
         print("'s' - stop")
         print("esc - exit")
@@ -55,16 +57,15 @@ class Visualizer(object):
         num_spaces = len(str(history_len))
         i = 0
         ms = 0
-        _print_progress()
         while True:
+            _print_progress()
             image = self.image if i == history_len else self.puzzle_image
             key = self.show(image, ms)
-            # sys.stdout.write("\033[F")
-            if key == ord(' ') and i < history_len:
+            if key in [ord(' '), 124] and i < history_len:
                 self._swap_cells(*self.swap_history[i])
                 i += 1
                 ms = 0
-            elif key == ord('b') and i != 0:
+            elif key in [ord('b'), 123] and i != 0:
                 i -= 1
                 self._swap_cells(*reversed(self.swap_history[i]))
                 ms = 0
@@ -78,7 +79,6 @@ class Visualizer(object):
                 print()
                 cv2.destroyWindow("%d-puzzle" % self.n)
                 break
-            _print_progress()
 
     def show(self, image, ms=0):
         """
@@ -190,12 +190,9 @@ if __name__ == '__main__':
 
     vis = Visualizer("data/images/pepega.jpg", puzzle)
     vis.add_swap([0, 2], [0, 1])
-    vis.add_swap(np.array([0, 1]), np.array([1, 1]))
+    vis.add_swap(np.array((0, 1)), np.array((1, 1)))
     vis.add_swap((1, 1), (2, 1))
     vis.add_swap((2, 1), (2, 0))
     vis.add_swap((2, 0), (1, 0))
     vis.add_swap((1, 0), (0, 0))
     vis.run()
-
-    cv2.imwrite("data/images/rgba.png", vis.puzzle_image)
-

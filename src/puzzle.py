@@ -1,4 +1,3 @@
-from __future__ import annotations
 from heapq import heappop, heappush
 import numpy as np
 
@@ -7,7 +6,7 @@ class Field:
     """
         Representation of puzzle field
     """
-    def __init__(self, distance_from_start: int = 0, parent: Field = None, state: np.array = None):
+    def __init__(self, distance_from_start: int = 0, parent=None, state: np.array = None):
         # assert any((distance_from_start, parent))
         self.parent = parent
         if self.parent:

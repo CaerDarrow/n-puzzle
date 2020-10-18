@@ -1,15 +1,19 @@
 import numpy as np
 from pathlib import Path
 
+from puzzle import Field
+
+
 def _check_cells(puzzle):
     flatten = np.arange(puzzle.size)
     return (flatten == np.sort(puzzle.flatten())).all()
 
-def parse_n_puzzle(path: str or Path) -> np.ndarray:
+
+def parse_n_puzzle(path: str or Path) -> Field:
     """
     Parse file to ndarray
     :param path: str or pathlib.Path. Path to n_puzzel file
-    :return: ndarray with shape (N, N)
+    :return: Field
     """
     path = Path(path)
 
@@ -43,7 +47,7 @@ def parse_n_puzzle(path: str or Path) -> np.ndarray:
     assert j == puzzle.shape[0], "Puzzle must have %d number or rows" % puzzle.shape[0]
     assert _check_cells(puzzle), \
         "Cell value must be unique and 0 <= cell value < n^2 "
-    return puzzle
+    return Field(state=puzzle)
 
 
 if __name__ == '__main__':

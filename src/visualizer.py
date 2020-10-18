@@ -41,7 +41,7 @@ class Visualizer(object):
         Run visualization
         """
         def _print_progress():
-            progress = "Progress: {:-{}d} / {:-{}d} - {}%" \
+            progress = "Progress: {:-{}d} / {:-{}d} - {}% " \
                 .format(i, num_spaces, history_len, num_spaces, int(i / history_len * 100))
             sys.stdout.write("\r" + progress)
 

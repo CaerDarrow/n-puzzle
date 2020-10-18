@@ -1,6 +1,7 @@
 from pathlib import Path
 from parser import parse_n_puzzle
 from puzzle import Solver, Field
+from visualizer import Visualizer
 
 
 def generator(solution):
@@ -16,9 +17,10 @@ def main(puzzle_name):
     puzzle = parse_n_puzzle(puzzle_path)
     solver = Solver(first_field=puzzle)
     solved_puzzle = solver.solve()
+    vis = Visualizer("../data/images/pepega.jpg", puzzle)
     for field in generator(solved_puzzle):
-        print(field.state)
-        print("===")
+        vis.add_swap(*field.permutations)
+    vis.run()
 
 
 if __name__ == '__main__':

@@ -8,7 +8,12 @@ class Field:
     """
         Representation of puzzle field
     """
-    def __init__(self, distance_from_start: int = 0, parent=None, state: np.array = None, manhattan_score: int = 0):
+    def __init__(self,
+                 distance_from_start: int = 0,
+                 parent=None,
+                 state: np.array = None,
+                 manhattan_score: int = 0,
+                 perms=((0, 0), (0, 0))):
         # assert any((distance_from_start, parent))
         self.parent = parent
         if self.parent:
@@ -18,6 +23,7 @@ class Field:
         assert state is not None, "Попытка создать пустую головоломку"
         self.state = state
         self.manhattan_score = manhattan_score
+        self.permutations = perms
 
     @property
     def cost(self):  # f(n)
@@ -81,7 +87,15 @@ class Solver:
                 copied = np.copy(field.state)
                 copied[y, x], copied[y + y_gain, x + x_gain] = copied[y + y_gain, x + x_gain], copied[y, x]
                 if hash(tuple(copied.tostring())) not in self.closed_set:
-                    heappush(self.open_set, Field(parent=field, state=copied, manhattan_score=self.manhattan_score(copied)))
+                    heappush(
+                        self.open_set,
+                        Field(
+                            parent=field,
+                            state=copied,
+                            manhattan_score=self.manhattan_score(copied),
+                            perms=((y, x), (y + y_gain, x + x_gain))
+                        )
+                    )
                 else:
                     del copied  # lol
 

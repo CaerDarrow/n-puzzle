@@ -186,9 +186,9 @@ if __name__ == '__main__':
     from parser import parse_n_puzzle
     ms = 300
 
-    puzzle = parse_n_puzzle("data/puzzles/solv_3.txt")
+    puzzle = parse_n_puzzle("../data/puzzles/solv_3.txt")
 
-    vis = Visualizer("data/images/pepega.jpg", puzzle)
+    vis = Visualizer("../data/images/pepega.jpg", puzzle)
     vis.add_swap([0, 2], [0, 1])
     vis.add_swap(np.array((0, 1)), np.array((1, 1)))
     vis.add_swap((1, 1), (2, 1))

@@ -84,3 +84,4 @@ if __name__ == '__main__':
     print(smm.matrix_to_spiral)
     print(smm.get_matrix_indexes(13))
     print(smm.get_spiral_index(2, 1))
+    print(smm.spiral_to_matrix)

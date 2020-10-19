@@ -71,10 +71,7 @@ class SpiralMatrixMapping(object):
         :return: ndarray matrix with shape (self.n, self.n)
         """
         matrix_to_spiral = np.zeros((self.n, self.n), dtype=np.int)
-        i = 0
-        for y, x in self.spiral_to_matrix:
-            matrix_to_spiral[y, x] = i
-            i += 1
+        matrix_to_spiral[tuple(self.spiral_to_matrix.T)] = range(self.n ** 2)
         return matrix_to_spiral
 
 

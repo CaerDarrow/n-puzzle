@@ -46,8 +46,8 @@ class Visualizer(object):
             sys.stdout.write("\r" + progress)
 
         print("===== Visualization =====")
-        print("' ' or -> - one step forward")
-        print("'b' or <-  - one step backward")
+        print("' ' - one step forward")
+        print("'b' - one step backward")
         print("'r' - run")
         print("'s' - stop")
         print("esc - exit")
@@ -61,13 +61,13 @@ class Visualizer(object):
             _print_progress()
             image = self.image if i == history_len else self.puzzle_image
             key = self.show(image, ms)
-            if key in [ord(' '), 124] and i < history_len:
+            if key == ord(' ') and i < history_len:
                 self._swap_cells(*self.swap_history[i])
                 i += 1
                 ms = 0
-            elif key in [ord('b'), 123] and i != 0:
+            elif key == ord('b') and i != 0:
                 i -= 1
-                self._swap_cells(*reversed(self.swap_history[i]))
+                self._swap_cells(*self.swap_history[i])
                 ms = 0
             elif (key == ord('r') or key == -1) and i < history_len:
                 self._swap_cells(*self.swap_history[i])
@@ -186,9 +186,9 @@ if __name__ == '__main__':
     from parser import parse_n_puzzle
     ms = 300
 
-    puzzle = parse_n_puzzle("../data/puzzles/solv_3.txt")
+    puzzle = parse_n_puzzle("data/puzzles/solv_3.txt")
 
-    vis = Visualizer("../data/images/pepega.jpg", puzzle)
+    vis = Visualizer("data/images/pepega.jpg", puzzle)
     vis.add_swap([0, 2], [0, 1])
     vis.add_swap(np.array((0, 1)), np.array((1, 1)))
     vis.add_swap((1, 1), (2, 1))

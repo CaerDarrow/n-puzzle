@@ -26,7 +26,7 @@ def main(puzzle_name):
 if __name__ == '__main__':
     # import sys
     # puzzle_name = sys.argv[1]
-    puzzle_name = 'solv_4.txt'
+    puzzle_name = 'solv_3.txt'
     main(puzzle_name)
 
 

@@ -29,8 +29,9 @@ class Field:
 
     @property
     def cost(self):  # f(n)
-        return self.exact_cost + self.estimated_cost()
+        return self.exact_cost + self.estimated_cost
 
+    @property
     def estimated_cost(self):  # h(n) - heuristic
         return self.manhattan_score + self.hamming_score
 
@@ -90,6 +91,9 @@ class Solver:
                     distance += abs(target_y - y) + abs(target_x - x)
         return distance
 
+    def _hamming_score(self, state: np.ndarray) -> int:
+        return np.count_nonzero(state != self.target_state)
+
     def _is_solvable(self) -> bool:
         if False:
             return False
@@ -101,7 +105,7 @@ class Solver:
     ):
         y, x = np.argwhere(field.state == 0)[0]
         for x_gain, y_gain in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if x + x_gain in self._field_size and y + y_gain in self._field_size:
+            if (x_gain != 0 and x + x_gain in self._field_size) or (y_gain != 0 and y + y_gain in self._field_size):
                 copied = np.copy(field.state)
                 copied[y, x], copied[y + y_gain, x + x_gain] = copied[y + y_gain, x + x_gain], copied[y, x]
                 if hash(copied.tostring()) not in self.closed_set:
@@ -112,7 +116,7 @@ class Solver:
                         if self._manhattan:
                             manhattan_score = self._manhattan_score(copied)
                         if self._hamming:
-                            hamming_score = 0
+                            hamming_score = self._hamming_score(copied)
                     heappush(
                         self.open_set,
                         Field(
@@ -131,7 +135,8 @@ class Solver:
             heappush(self.open_set, self._first_field)
             while self.open_set:
                 current_field = heappop(self.open_set)
-                # print(current_field.cost)
+                if current_field.parent:
+                    print(current_field.exact_cost, current_field.estimated_cost, current_field.parent.estimated_cost)
                 # print(current_field.state)
                 self.closed_set.add(hash(current_field))
                 if np.array_equal(current_field.state, self.target_state):

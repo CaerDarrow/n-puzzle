@@ -45,40 +45,47 @@ class Visualizer(object):
                 .format(i, num_spaces, history_len, num_spaces, int(i / history_len * 100))
             sys.stdout.write("\r" + progress)
 
-        print("===== Visualization =====")
-        print("' ' or -> - one step forward")
-        print("'b' or <-  - one step backward")
-        print("'r' - run")
-        print("'s' - stop")
-        print("esc - exit")
-        print("=========================")
+        print("========== Visualization ==========")
+        print("Enter        - one step forward")
+        print("Backspace    - one step backward")
+        print("Space        - run / stop")
+        print("Esc          - exit")
+        print("===================================")
 
         history_len = len(self.swap_history)
         num_spaces = len(str(history_len))
+        run = False
         i = 0
         ms = 0
         while True:
             _print_progress()
             image = self.image if i == history_len else self.puzzle_image
             key = self.show(image, ms)
-            if key in [ord(' '), 124] and i < history_len:
+            if key == ord(' '):
+                run = ~run
+            elif key == 13 and i < history_len:     # FORWARD
                 self._swap_cells(*self.swap_history[i])
                 i += 1
                 ms = 0
-            elif key in [ord('b'), 123] and i != 0:
+                run = False
+            elif key == 8 and i != 0:   # BACKWARD
                 i -= 1
-                self._swap_cells(*reversed(self.swap_history[i]))
-                ms = 0
-            elif (key == ord('r') or key == -1) and i < history_len:
                 self._swap_cells(*self.swap_history[i])
-                ms = 250
-                i += 1
-            elif key == ord('s'):
                 ms = 0
-            elif key == 27:
+                run = False
+            elif key == 27:     # EXIT
+                #
                 print()
                 cv2.destroyWindow("%d-puzzle" % self.n)
                 break
+
+            # RUN / STOP
+            if (key == ord(' ') or key == -1) and run and i < history_len:
+                self._swap_cells(*self.swap_history[i])
+                ms = 250
+                i += 1
+            elif key == ord(' ') and not run:
+                ms = 0
 
     def show(self, image, ms=0):
         """
@@ -184,11 +191,10 @@ class Visualizer(object):
 if __name__ == '__main__':
 
     from parser import parse_n_puzzle
-    ms = 300
 
-    puzzle = parse_n_puzzle("../data/puzzles/solv_3.txt")
+    puzzle = parse_n_puzzle("data/puzzles/solv_3.txt")
 
-    vis = Visualizer("../data/images/pepega.jpg", puzzle)
+    vis = Visualizer("data/images/pepega.jpg", puzzle)
     vis.add_swap([0, 2], [0, 1])
     vis.add_swap(np.array((0, 1)), np.array((1, 1)))
     vis.add_swap((1, 1), (2, 1))

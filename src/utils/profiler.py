@@ -9,6 +9,13 @@ class Profiler(object):
         self.start = []
         self.end = []
 
+    def timeit(self, f, num_iter, *args, **kwargs):
+        for _ in range(num_iter):
+            self.tick()
+            ret = f(*args, **kwargs)
+            self.tock()
+        return ret
+
     def tick(self):
         self.start.append(time())
 

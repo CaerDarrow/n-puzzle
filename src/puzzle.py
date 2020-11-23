@@ -1,7 +1,7 @@
 from heapq import heappop, heappush
 import numpy as np
 from spiral_matrix import SpiralMatrixMapping
-import time
+
 
 class Field:
     """
@@ -10,18 +10,18 @@ class Field:
     def __init__(self,
                  parent=None,
                  state: np.array = None,
-                 distance_from_start: bool = True,
+                 distance_from_start: int = 0,
                  manhattan_score: int = 0,
                  hamming_score: int = 0,
+                 linear_conflict: int = 0,
                  permutations=((0, 0), (0, 0))):
         self.parent = parent
         # g(n)
-        self.exact_cost = 0
-        if distance_from_start and parent:
-            self.exact_cost = parent.exact_cost + 1
+        self.exact_cost = distance_from_start
         # h(n)
         self.manhattan_score = manhattan_score
         self.hamming_score = hamming_score
+        self.linear_conflict = linear_conflict
         # state
         assert state is not None, "Попытка создать пустую головоломку"
         self.state = state
@@ -33,7 +33,7 @@ class Field:
 
     @property
     def estimated_cost(self):  # h(n) - heuristic
-        return self.manhattan_score + self.hamming_score
+        return self.manhattan_score + self.hamming_score + self.linear_conflict
 
     def __lt__(self, other):
         return self.cost < other.cost
@@ -52,6 +52,9 @@ class Field:
 
 
 class Solver:
+    """
+        Solver
+    """
     def __init__(
             self,
             first_field: Field,
@@ -59,6 +62,7 @@ class Solver:
             uniform_cost: bool = False,
             manhattan: bool = False,
             hamming: bool = False,
+            linear: bool = False,
     ):
         self.closed_set = set()
         self.open_set = []
@@ -70,7 +74,8 @@ class Solver:
         self._uniform_cost = uniform_cost
         self._manhattan = manhattan
         self._hamming = hamming
-        if self._uniform_cost and any((self._manhattan, self._hamming)):
+        self._linear = linear
+        if self._uniform_cost and any((self._manhattan, self._hamming, self._linear)):
             raise AssertionError("Нельзя использовать эвристики и унифицированную стоимость")
 
     def _set_solution(self):
@@ -97,26 +102,23 @@ class Solver:
 
     def _linear_conflict(self, state: np.ndarray) -> int:
         conflicts = 0
-        print(state)
-        print(self.target_state)
         for y in self._field_range:
             for x in self._field_range:
                 current = state[y, x]
                 current_target_y, current_target_x = np.argwhere(self.target_state == current)[0]
                 if current != 0:
-                    for predict_y in range(y + 1, self._field_size):
-                        predict = state[predict_y, x]
-                        if predict != 0:
-                            test_target_y, test_target_x = np.argwhere(self.target_state == predict)[0]
-                            if test_target_x == current_target_x:
-                                if test_target_y > current_target_y:
-                                    print("col!", current, state[predict_y, x])
-                    for predict_x in range(x + 1, self._field_size):
-                        predict = state[y, predict_x]
-                        if predict != 0:
-                            test_target_y, test_target_x = np.argwhere(self.target_state == state[y, predict_x])[0]
-                            if test_target_y == current_target_y:
-                                print("row!", current, state[y, predict_x])
+                    for test_y in range(y + 1, self._field_size):
+                        test = state[test_y, x]
+                        if test != 0:
+                            test_target_y, test_target_x = np.argwhere(self.target_state == test)[0]
+                            if test_target_x == current_target_x and test_target_y < current_target_y and test_y > y:
+                                conflicts += 1
+                    for test_x in range(x + 1, self._field_size):
+                        test = state[y, test_x]
+                        if test != 0:
+                            test_target_y, test_target_x = np.argwhere(self.target_state == state[y, test_x])[0]
+                            if test_target_y == current_target_y and test_target_x < current_target_x and test_x > x:
+                                conflicts += 1
 
         return conflicts * 2
 
@@ -135,23 +137,15 @@ class Solver:
                 copied = np.copy(field.state)
                 copied[y, x], copied[y + y_gain, x + x_gain] = copied[y + y_gain, x + x_gain], copied[y, x]
                 if hash(copied.tostring()) not in self.closed_set:
-                    manhattan_score = 0
-                    hamming_score = 0
-                    distance_from_start = not self._greedy
-                    if not self._uniform_cost:
-                        if self._manhattan:
-                            manhattan_score = self._manhattan_score(copied)
-                        if self._hamming:
-                            hamming_score = self._hamming_score(copied)
-                        self._linear_conflict(copied)
                     heappush(
                         self.open_set,
                         Field(
                             parent=field,
                             state=copied,
-                            distance_from_start=distance_from_start,
-                            manhattan_score=manhattan_score,
-                            hamming_score=hamming_score,
+                            distance_from_start=field.exact_cost + 1 if not self._greedy else 0,
+                            manhattan_score=self._manhattan_score(copied) if self._manhattan else 0,
+                            hamming_score=self._hamming_score(copied) if self._hamming else 0,
+                            linear_conflict=self._linear_conflict(copied) if self._linear else 0,
                             permutations=((y, x), (y + y_gain, x + x_gain))
                         )
                     )
@@ -163,9 +157,8 @@ class Solver:
             while self.open_set:
                 current_field = heappop(self.open_set)
                 if current_field.parent:
-                    print(current_field.exact_cost, current_field.estimated_cost, current_field.parent.estimated_cost)
-                print(current_field.state)
-                time.sleep(0.5)
+                    print(f"{current_field.cost} = {current_field.exact_cost} + {current_field.estimated_cost}")
+                # print(current_field.state)
                 self.closed_set.add(hash(current_field))
                 if np.array_equal(current_field.state, self.target_state):
                     return current_field  # solved

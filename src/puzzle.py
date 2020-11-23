@@ -1,7 +1,7 @@
 from heapq import heappop, heappush
 import numpy as np
 from spiral_matrix import SpiralMatrixMapping
-
+import time
 
 class Field:
     """
@@ -64,7 +64,8 @@ class Solver:
         self.open_set = []
         self._first_field = first_field
         self._target_state = np.ndarray([])  # решение
-        self._field_size = tuple(range(self._first_field.state.shape[0]))
+        self._field_size = self._first_field.state.shape[0]
+        self._field_range = tuple(range(self._first_field.state.shape[0]))
         self._greedy = greedy_search
         self._uniform_cost = uniform_cost
         self._manhattan = manhattan
@@ -84,8 +85,8 @@ class Solver:
 
     def _manhattan_score(self, state: np.ndarray) -> int:
         distance = 0
-        for y in self._field_size:
-            for x in self._field_size:
+        for y in self._field_range:
+            for x in self._field_range:
                 if state[y, x] != 0:
                     target_y, target_x = np.argwhere(self.target_state == state[y, x])[0]
                     distance += abs(target_y - y) + abs(target_x - x)
@@ -93,6 +94,31 @@ class Solver:
 
     def _hamming_score(self, state: np.ndarray) -> int:
         return np.count_nonzero(state != self.target_state)
+
+    def _linear_conflict(self, state: np.ndarray) -> int:
+        conflicts = 0
+        print(state)
+        print(self.target_state)
+        for y in self._field_range:
+            for x in self._field_range:
+                current = state[y, x]
+                current_target_y, current_target_x = np.argwhere(self.target_state == current)[0]
+                if current != 0:
+                    for predict_y in range(y + 1, self._field_size):
+                        predict = state[predict_y, x]
+                        if predict != 0:
+                            test_target_y, test_target_x = np.argwhere(self.target_state == predict)[0]
+                            if test_target_x == current_target_x:
+                                if test_target_y > current_target_y:
+                                    print("col!", current, state[predict_y, x])
+                    for predict_x in range(x + 1, self._field_size):
+                        predict = state[y, predict_x]
+                        if predict != 0:
+                            test_target_y, test_target_x = np.argwhere(self.target_state == state[y, predict_x])[0]
+                            if test_target_y == current_target_y:
+                                print("row!", current, state[y, predict_x])
+
+        return conflicts * 2
 
     def _is_solvable(self) -> bool:
         if False:
@@ -105,7 +131,7 @@ class Solver:
     ):
         y, x = np.argwhere(field.state == 0)[0]
         for x_gain, y_gain in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if (x_gain != 0 and x + x_gain in self._field_size) or (y_gain != 0 and y + y_gain in self._field_size):
+            if (x_gain != 0 and x + x_gain in self._field_range) or (y_gain != 0 and y + y_gain in self._field_range):
                 copied = np.copy(field.state)
                 copied[y, x], copied[y + y_gain, x + x_gain] = copied[y + y_gain, x + x_gain], copied[y, x]
                 if hash(copied.tostring()) not in self.closed_set:
@@ -117,6 +143,7 @@ class Solver:
                             manhattan_score = self._manhattan_score(copied)
                         if self._hamming:
                             hamming_score = self._hamming_score(copied)
+                        self._linear_conflict(copied)
                     heappush(
                         self.open_set,
                         Field(
@@ -137,7 +164,8 @@ class Solver:
                 current_field = heappop(self.open_set)
                 if current_field.parent:
                     print(current_field.exact_cost, current_field.estimated_cost, current_field.parent.estimated_cost)
-                # print(current_field.state)
+                print(current_field.state)
+                time.sleep(0.5)
                 self.closed_set.add(hash(current_field))
                 if np.array_equal(current_field.state, self.target_state):
                     return current_field  # solved

@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 
-from puzzle import Field
+from .puzzle import Field
 
 
 def _check_cells(puzzle):
@@ -21,8 +21,8 @@ def parse_n_puzzle(path: str or Path) -> Field:
 
     try:
         text = path.read_text().split('\n')
-    except:
-        exit("Wrong file format")
+    except Exception as exc:
+        raise Exception("Wrong file format")
     j = 0
     for i, line in enumerate(text):
         try:
@@ -33,8 +33,8 @@ def parse_n_puzzle(path: str or Path) -> Field:
                 puzzle = np.zeros((int(line), int(line)), dtype=np.int)
                 continue
             separated = line.split()
-        except:
-            exit("Wrong file content")
+        except Exception as exc:
+            raise Exception("Wrong file content")
 
         assert len(separated) == puzzle.shape[0], \
             "Puzzle must have %d number or columns" % puzzle.shape[0]

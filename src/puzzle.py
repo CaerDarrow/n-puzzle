@@ -1,6 +1,6 @@
 from heapq import heappop, heappush
 import numpy as np
-from spiral_matrix import SpiralMatrixMapping
+from .spiral_matrix import SpiralMatrixMapping
 
 
 class Field:
@@ -63,6 +63,7 @@ class Solver:
             manhattan: bool = False,
             hamming: bool = False,
             linear: bool = False,
+            debug: bool = False,
     ):
         self.closed_set = set()
         self.open_set = []
@@ -75,6 +76,7 @@ class Solver:
         self._manhattan = manhattan
         self._hamming = hamming
         self._linear = linear
+        self._debug = debug
         if self._uniform_cost and any((self._manhattan, self._hamming, self._linear)):
             raise AssertionError("Нельзя использовать эвристики и унифицированную стоимость")
 
@@ -135,6 +137,7 @@ class Solver:
         return inversions
 
     def _is_solvable(self) -> bool:
+        self._set_solution()
         inversions = self._count_inversions()
         z_start = np.argwhere(self._first_field.state == 0)[0]
         z_solution = np.argwhere(self.target_state == 0)[0]
@@ -169,16 +172,14 @@ class Solver:
                     )
 
     def solve(self) -> Field:
-        self._set_solution()
         if self._is_solvable():
             heappush(self.open_set, self._first_field)
             while self.open_set:
                 current_field = heappop(self.open_set)
-                if current_field.parent:
-                    print(f"{current_field.cost} = {current_field.exact_cost} + {current_field.estimated_cost}")
-                # print(current_field.state)
+                if self._debug:
+                    print('Current state:', current_field.state)
                 self.closed_set.add(hash(current_field))
                 if np.array_equal(current_field.state, self.target_state):
                     return current_field  # solved
                 self._generate_fields(field=current_field)  # Fields states generator
-        raise Exception("Can't solve")
+        raise Exception("Can't solve this puzzle, sorry")

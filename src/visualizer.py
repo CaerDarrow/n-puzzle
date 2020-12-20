@@ -4,8 +4,8 @@ import numpy as np
 from pathlib import Path
 from copy import deepcopy
 
-from puzzle import Field
-from spiral_matrix import SpiralMatrixMapping
+from .puzzle import Field
+from .spiral_matrix import SpiralMatrixMapping
 
 
 class Visualizer(object):

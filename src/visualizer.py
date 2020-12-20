@@ -2,6 +2,7 @@ import cv2
 import sys
 import numpy as np
 from pathlib import Path
+from copy import deepcopy
 
 from puzzle import Field
 from spiral_matrix import SpiralMatrixMapping
@@ -15,6 +16,9 @@ class Visualizer(object):
         :param puzzle: Field object
         :param scale: float - image scale
         """
+        self.zero_xy = np.where(puzzle.state == 0)
+        self.zero_xy = [self.zero_xy[0][0], self.zero_xy[1][0]]
+        self.next_xy = deepcopy(self.zero_xy)
         self.n = puzzle.state.shape[0]
         self.smm = SpiralMatrixMapping(self.n)
         self.swap_history = []
@@ -86,6 +90,39 @@ class Visualizer(object):
                 i += 1
             elif key == ord(' ') and not run:
                 ms = 0
+
+    def manual_run(self):
+        """
+        Run manual visualization
+        """
+        print("========== Visualization ==========")
+        print("W    - swap top")
+        print("A    - swap left")
+        print("S    - swap bottom")
+        print("D    - swap right")
+        print("===================================")
+
+        def perform_step(axis, step):
+            new_val = self.next_xy[axis] + step
+            if self.n - 1 < new_val or new_val < 0:
+                return
+            self.next_xy[axis] = new_val
+            self._swap_cells(tuple(self.zero_xy), tuple(self.next_xy))
+            self.zero_xy = deepcopy(self.next_xy)
+
+        while True:
+            key = self.show(self.puzzle_image, 0)
+            if key == ord('w'):     # TOP
+                perform_step(0, -1)
+            elif key == ord('a'):   # LEFT
+                perform_step(1, -1)
+            elif key == ord('s'):   # BOTTOM
+                perform_step(0, 1)
+            elif key == ord('d'):   # RIGHT
+                perform_step(1, 1)
+            elif key == 27:         # EXIT
+                cv2.destroyWindow("%d-puzzle" % self.n)
+                break
 
     def show(self, image, ms=0):
         """
@@ -201,4 +238,5 @@ if __name__ == '__main__':
     vis.add_swap((2, 1), (2, 0))
     vis.add_swap((2, 0), (1, 0))
     vis.add_swap((1, 0), (0, 0))
-    vis.run()
+    # vis.run()
+    vis.manual_run()

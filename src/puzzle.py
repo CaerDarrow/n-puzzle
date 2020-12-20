@@ -122,10 +122,28 @@ class Solver:
 
         return conflicts * 2
 
+    def _count_inversions(self):
+        flat_solution = self.target_state.flatten()
+        flat_start = self._first_field.state.flatten()
+        inversions = 0
+        for i, val1 in enumerate(flat_start):
+            pos1 = np.argwhere(flat_solution == val1)[0][0]
+            for j, val2 in enumerate(flat_start[i + 1:], start=i + 1):
+                pos2 = np.argwhere(flat_solution == val2)[0][0]
+                if pos2 < pos1:
+                    inversions += 1
+        return inversions
+
     def _is_solvable(self) -> bool:
-        if False:
-            return False
-        return True
+        inversions = self._count_inversions()
+        z_start = np.argwhere(self._first_field.state == 0)[0]
+        z_solution = np.argwhere(self.target_state == 0)[0]
+        zero_distance = abs(z_start[0] - z_solution[0]) + abs(z_start[1] - - z_solution[1])
+        if zero_distance % 2 == 0 and inversions % 2 == 0:
+            return True
+        if zero_distance % 2 == 1 and inversions % 2 == 1:
+            return True
+        return False
 
     def _generate_fields(
             self,
@@ -151,8 +169,8 @@ class Solver:
                     )
 
     def solve(self) -> Field:
+        self._set_solution()
         if self._is_solvable():
-            self._set_solution()
             heappush(self.open_set, self._first_field)
             while self.open_set:
                 current_field = heappop(self.open_set)

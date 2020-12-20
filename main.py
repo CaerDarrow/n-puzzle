@@ -25,9 +25,6 @@ def parse_arguments(parser):
     parser.add_argument("-D", "--debug", action="store_true", default=False,
                         help="Debug mode")
     parser.add_argument("-V", "--visualize", type=Path, help="Visualization")
-    # subparsers = parser.add_subparsers()
-    # vis_path = subparsers.add_parser('visualize')
-    # vis_path.add_argument("visual_filename", type=Path, help="path to image.jpg for visualiser")
     return parser.parse_args()
 
 
@@ -65,8 +62,6 @@ if __name__ == '__main__':
         main()
         exit(0)
     except Exception as exc:
-        import sys
-        print(sys.exc_info()[1])
         print(exc)
         exit(1)
 

@@ -23,7 +23,7 @@ class Field:
         self.hamming_score = hamming_score
         self.linear_conflict = linear_conflict
         # state
-        assert state is not None, "Попытка создать пустую головоломку"
+        assert state is not None, "Attempt to create empty puzzle"
         self.state = state
         self.permutations = permutations
 
@@ -78,7 +78,7 @@ class Solver:
         self._linear = linear
         self._debug = debug
         if self._uniform_cost and any((self._manhattan, self._hamming, self._linear)):
-            raise AssertionError("Нельзя использовать эвристики и унифицированную стоимость")
+            raise AssertionError("Can't use both heuristics and uniform cost")
 
     def _set_solution(self):
         solution = SpiralMatrixMapping(self._first_field.state.shape[0])
@@ -177,7 +177,13 @@ class Solver:
             while self.open_set:
                 current_field = heappop(self.open_set)
                 if self._debug:
-                    print('Current state:', current_field.state)
+                    print(f'''\
+Current field:
+{current_field.state}    
+g(x) = {current_field.exact_cost}
+h(x) = {current_field.estimated_cost}
+f(x) = {current_field.cost}
+----------------------------''')
                 self.closed_set.add(hash(current_field))
                 if np.array_equal(current_field.state, self.target_state):
                     return current_field  # solved

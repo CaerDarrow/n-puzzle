@@ -11,12 +11,12 @@ def generator(solution):
     while solution is not None:
         solutions.append(solution)
         solution = solution.parent
-    return reversed(solutions)
+    return list(reversed(solutions))
 
 
 def parse_arguments(parser):
     parser.add_argument("filename", type=Path, help="generated puzzle file")
-    parser.add_argument("-H", "--heuristics", action="append", choices=['Manhattan', 'Linear', 'Hamming'],
+    parser.add_argument("-H", "--heuristics", action="append", choices=['Manhattan', 'Linear', 'Hamming'], default=[],
                         help="Add heuristics")
     parser.add_argument("-G", "--greedy_search", action="store_true", default=False,
                         help="Greedy search mode")
@@ -44,12 +44,17 @@ def main():
         uniform_cost=args.uniform_cost,
         debug=args.debug,
     )
-    solved_puzzle = solver.solve()
+    solved_puzzle = generator(solver.solve())
     print("========== Solution ==========")
+    for field in solved_puzzle:
+        print(field.state)
+    print(f"Number of moves: {len(solved_puzzle) - 1}")
+    print(f"Time complexity: {len(solver.closed_set)}")
+    print(f"Size complexity: {len(solver.closed_set) + len(solver.open_set)}")
     print("===================================")
     if args.visualize:
         vis = Visualizer(args.visualize, puzzle)
-        for field in generator(solved_puzzle):
+        for field in solved_puzzle:
             vis.add_swap(*field.permutations)
         vis.run()
 
@@ -60,6 +65,8 @@ if __name__ == '__main__':
         main()
         exit(0)
     except Exception as exc:
+        import sys
+        print(sys.exc_info()[1])
         print(exc)
         exit(1)
 

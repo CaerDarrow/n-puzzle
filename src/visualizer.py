@@ -16,14 +16,21 @@ class Visualizer(object):
         :param puzzle: Field object
         :param scale: float - image scale
         """
+        self.n = puzzle.state.shape[0]
+        self.smm = SpiralMatrixMapping(self.n)
+
+        self.state = np.copy(puzzle.state)
+        self.target = np.zeros((self.n, self.n), dtype=np.int)
+        self.target[tuple(self.smm.spiral_to_matrix.T)] = np.roll(np.arange(self.n**2), -1)
+
         self.zero_xy = np.where(puzzle.state == 0)
         self.zero_xy = [self.zero_xy[0][0], self.zero_xy[1][0]]
         self.next_xy = deepcopy(self.zero_xy)
-        self.n = puzzle.state.shape[0]
-        self.smm = SpiralMatrixMapping(self.n)
         self.swap_history = []
 
         self.image = cv2.imread(str(image_path))
+        if self.image is None:
+            raise AssertionError("Wrong image path")
         self.cell_h = 0
         self.cell_w = 0
 
@@ -39,6 +46,9 @@ class Visualizer(object):
         """
         xy1, xy2 = tuple(xy1), tuple(xy2)
         self.swap_history.append((xy1, xy2))
+
+    def _check_state(self):
+        return (self.state == self.target).all()
 
     def run(self):
         """
@@ -63,7 +73,7 @@ class Visualizer(object):
         ms = 0
         while True:
             _print_progress()
-            image = self.image if i == history_len else self.puzzle_image
+            image = self.image if self._check_state() else self.puzzle_image
             key = self.show(image, ms)
             if key == ord(' '):
                 run = ~run
@@ -91,7 +101,7 @@ class Visualizer(object):
             elif key == ord(' ') and not run:
                 ms = 0
 
-    def manual_run(self):
+    def manual_control(self):
         """
         Run manual visualization
         """
@@ -111,7 +121,8 @@ class Visualizer(object):
             self.zero_xy = deepcopy(self.next_xy)
 
         while True:
-            key = self.show(self.puzzle_image, 0)
+            image = self.image if self._check_state() else self.puzzle_image
+            key = self.show(image, 0)
             if key == ord('w'):     # TOP
                 perform_step(0, -1)
             elif key == ord('a'):   # LEFT
@@ -141,6 +152,7 @@ class Visualizer(object):
         :param xy2: (row, column)
         :return: None
         """
+        self.state[xy1], self.state[xy2] = self.state[xy2], self.state[xy1]
         cell1 = np.copy(self.cells[xy1])
         cell2 = self.cells[xy2]
 
@@ -170,6 +182,11 @@ class Visualizer(object):
         :return: ndarray with shape (n, n, h, w, c)
         """
         # scale image
+        h, w, _ = self.image.shape
+        if h * scale < 3 or w * scale < 3:
+            raise AssertionError("Image resolution too low")
+        if h * scale > 5000 or w * scale > 5000:
+            raise AssertionError("Image resolution too high")
         self.image = cv2.resize(self.image, None, fx=scale, fy=scale)
         # resize image
         h = self.image.shape[0] - self.image.shape[0] % self.n

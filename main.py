@@ -24,7 +24,11 @@ def parse_arguments(parser):
                         help="Unifrom cost mode")
     parser.add_argument("-D", "--debug", action="store_true", default=False,
                         help="Debug mode")
-    parser.add_argument("-V", "--visualize", type=Path, help="Visualization")
+    parser.add_argument("-V", "--visualize", action="store_true", help="Visualization")
+    parser.add_argument("-M", "--manual_control", action="store_true", help="Solve n-puzzle yourself")
+    parser.add_argument("--image", type=Path, default='data/images/pepega.jpg',
+                        help="Path to image file")
+    parser.add_argument("--scale", type=float, default=1.0, help="Image scaling factor")
     return parser.parse_args()
 
 
@@ -32,6 +36,12 @@ def main():
     parser = argparse.ArgumentParser()
     args = parse_arguments(parser)
     puzzle = parse_n_puzzle(args.filename)
+
+    if args.manual_control:
+        vis = Visualizer(args.image, puzzle, args.scale)
+        vis.manual_control()
+        return
+
     solver = Solver(
         first_field=puzzle,
         manhattan='Manhattan' in args.heuristics,
@@ -50,7 +60,7 @@ def main():
     print(f"Size complexity: {len(solver.closed_set) + len(solver.open_set)}")
     print("===================================")
     if args.visualize:
-        vis = Visualizer(args.visualize, puzzle)
+        vis = Visualizer(args.image, puzzle, args.scale)
         for field in solved_puzzle:
             vis.add_swap(*field.permutations)
         vis.run()
